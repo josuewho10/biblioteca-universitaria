@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Users, Plus, Edit, Trash2, UserCheck, X, Save } from "lucide-react";
 import type { Usuario, TipoUsuario } from "../types";
 import { StorageKeys, getStorage, setStorage } from "../utils/storage";
 
@@ -13,6 +14,7 @@ export default function Usuarios() {
   });
   const [error, setError] = useState("");
   const [editandoCodigo, setEditandoCodigo] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
 
   // Cargar usuarios al iniciar
   useEffect(() => {
@@ -116,21 +118,41 @@ export default function Usuarios() {
     }
   };
 
-  return (
-    <div className="max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold text-blue-700 mb-6">
-        {" "}
-        Gestión de Usuarios
-      </h1>
+  // Filtrar usuarios por búsqueda
+  const usuariosFiltrados = usuarios.filter(
+    (u) =>
+      u.nombres.toLowerCase().includes(busqueda.toLowerCase()) ||
+      u.apellidos.toLowerCase().includes(busqueda.toLowerCase()) ||
+      u.codigoUniversitario.toLowerCase().includes(busqueda.toLowerCase()),
+  );
 
-      {/* FORMULARIO DE REGISTRO/EDICIÓN */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">
-          {editandoCodigo ? "️ Editar Usuario" : "➕ Registrar Nuevo Usuario"}
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+          <Users className="w-8 h-8 text-blue-600" />
+          Gestión de Usuarios
+        </h1>
+        <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold">
+          {usuarios.length} usuarios registrados
+        </div>
+      </div>
+
+      {/* Formulario de Registro/Edición */}
+      <div className="bg-white border-2 border-slate-200 rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+          {editandoCodigo ? (
+            <Edit className="w-5 h-5 text-amber-500" />
+          ) : (
+            <Plus className="w-5 h-5 text-blue-600" />
+          )}
+          {editandoCodigo ? "Editar Usuario" : "Registrar Nuevo Usuario"}
         </h2>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+            <X className="w-4 h-4" />
             {error}
           </div>
         )}
@@ -140,7 +162,7 @@ export default function Usuarios() {
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Código Universitario *
             </label>
             <input
@@ -149,12 +171,14 @@ export default function Usuarios() {
               onChange={handleChange}
               placeholder="Ej: 20210001"
               disabled={!!editandoCodigo}
-              className={`w-full border p-2 rounded ${editandoCodigo ? "bg-gray-100" : ""}`}
+              className={`w-full border-2 border-slate-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none ${
+                editandoCodigo ? "bg-slate-100" : ""
+              }`}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Nombres *
             </label>
             <input
@@ -162,12 +186,12 @@ export default function Usuarios() {
               value={formData.nombres}
               onChange={handleChange}
               placeholder="Ingresa los nombres"
-              className="w-full border p-2 rounded"
+              className="w-full border-2 border-slate-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Apellidos
             </label>
             <input
@@ -175,12 +199,12 @@ export default function Usuarios() {
               value={formData.apellidos}
               onChange={handleChange}
               placeholder="Ingresa los apellidos"
-              className="w-full border p-2 rounded"
+              className="w-full border-2 border-slate-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Correo Electrónico *
             </label>
             <input
@@ -189,40 +213,41 @@ export default function Usuarios() {
               value={formData.correo}
               onChange={handleChange}
               placeholder="usuario@uncp.edu.pe"
-              className="w-full border p-2 rounded"
+              className="w-full border-2 border-slate-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Tipo de Usuario
             </label>
             <select
               name="tipo"
               value={formData.tipo}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border-2 border-slate-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none"
             >
               <option value="Estudiante">Estudiante</option>
               <option value="Docente">Docente</option>
-              <option value="Administrador">Administrador</option>
             </select>
           </div>
 
           <div className="flex gap-2 md:col-span-2">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white p-3 rounded hover:bg-blue-700 font-bold transition"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
             >
-              {editandoCodigo ? " Actualizar Usuario" : "➕ Registrar Usuario"}
+              <Save className="w-4 h-4" />
+              {editandoCodigo ? "Actualizar Usuario" : "Registrar Usuario"}
             </button>
 
             {editandoCodigo && (
               <button
                 type="button"
                 onClick={cancelarEdicion}
-                className="px-6 bg-gray-500 text-white p-3 rounded hover:bg-gray-600 font-bold transition"
+                className="px-6 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all"
               >
+                <X className="w-4 h-4" />
                 Cancelar
               </button>
             )}
@@ -230,74 +255,97 @@ export default function Usuarios() {
         </form>
       </div>
 
-      {/* TABLA DE USUARIOS */}
-      <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-        <h2 className="text-xl font-semibold mb-4">
-          📋 Usuarios Registrados ({usuarios.length})
-        </h2>
+      {/* Lista de Usuarios */}
+      <div className="bg-white border-2 border-slate-200 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-blue-600" />
+            Usuarios Registrados
+          </h2>
+          <input
+            type="text"
+            placeholder="Buscar usuario..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="border-2 border-slate-200 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+          />
+        </div>
 
-        {usuarios.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+        {usuariosFiltrados.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">
+            <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg">No hay usuarios registrados</p>
             <p className="text-sm">Comienza agregando tu primer usuario</p>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b-2 border-gray-200">
-                <th className="p-3">Código</th>
-                <th className="p-3">Nombre Completo</th>
-                <th className="p-3">Correo</th>
-                <th className="p-3">Tipo</th>
-                <th className="p-3 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u) => (
-                <tr
-                  key={u.codigoUniversitario}
-                  className="border-b hover:bg-gray-50 transition"
-                >
-                  <td className="p-3 font-mono text-sm">
-                    {u.codigoUniversitario}
-                  </td>
-                  <td className="p-3">
-                    {u.nombres} {u.apellidos}
-                  </td>
-                  <td className="p-3 text-sm">{u.correo}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        u.tipo === "Estudiante"
-                          ? "bg-green-100 text-green-800"
-                          : u.tipo === "Docente"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-purple-100 text-purple-800"
-                      }`}
-                    >
-                      {u.tipo}
-                    </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => editarUsuario(u)}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm font-bold transition"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => eliminarUsuario(u.codigoUniversitario)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm font-bold transition"
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-slate-200">
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Código
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Nombre Completo
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Correo
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Tipo
+                  </th>
+                  <th className="text-center p-3 text-sm font-semibold text-slate-700">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuariosFiltrados.map((u) => (
+                  <tr
+                    key={u.codigoUniversitario}
+                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="p-3 font-mono text-sm text-slate-900">
+                      {u.codigoUniversitario}
+                    </td>
+                    <td className="p-3 text-slate-900">
+                      {u.nombres} {u.apellidos}
+                    </td>
+                    <td className="p-3 text-sm text-slate-600">{u.correo}</td>
+                    <td className="p-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          u.tipo === "Estudiante"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-violet-100 text-violet-800"
+                        }`}
+                      >
+                        {u.tipo}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => editarUsuario(u)}
+                          className="bg-amber-500 hover:bg-amber-600 text-white p-2 rounded-lg transition-all"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => eliminarUsuario(u.codigoUniversitario)}
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
