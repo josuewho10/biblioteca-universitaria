@@ -5,10 +5,9 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  Download,
 } from "lucide-react";
 import type { Prestamo, Libro, Usuario } from "../types";
-import { StorageKeys, getStorage } from "../utils/storage";
+import { StorageKeys, getStorage, setStorage } from "../utils/storage";
 
 export default function Historial() {
   const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
@@ -53,10 +52,7 @@ export default function Historial() {
       p.id === prestamoId ? { ...p, estado: "Devuelto" as const } : p,
     );
     setPrestamos(prestamosActualizados);
-    localStorage.setItem(
-      StorageKeys.PRESTAMOS,
-      JSON.stringify(prestamosActualizados),
-    );
+    setStorage(StorageKeys.PRESTAMOS, prestamosActualizados);
   };
 
   return (
