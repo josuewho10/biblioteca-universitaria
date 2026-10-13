@@ -1,36 +1,54 @@
 # Sistema de Gestión de Biblioteca Universitaria
 
-**Evaluación Parcial · Desarrollo de Aplicaciones Web · Universidad Nacional del Centro del Perú (UNCP)**
+Evaluación Parcial · Desarrollo de Aplicaciones Web · Universidad Nacional del Centro del Perú (UNCP)
 
-Aplicación web para administrar el préstamo de libros a estudiantes y docentes. Toda la información se gestiona y persiste utilizando **Local Storage**, simulando un entorno empresarial sin dependencias de bases de datos externas.
+Aplicación web para administrar el préstamo de libros a estudiantes y docentes. Toda la información se guarda en **Local Storage**, sin base de datos externa.
 
-## 🛠️ Tecnologías Utilizadas
+## Tecnologías
 
-- **React + Vite**: Framework y herramienta de construcción rápida.
-- **TypeScript**: Tipado estático para mayor robustez y prevención de errores.
-- **React Router DOM**: Navegación fluida entre módulos sin recargar la página.
-- **Tailwind CSS**: Estilos modernos, limpios y diseño 100% responsivo.
-- **lucide-react**: Biblioteca de íconos vectoriales profesionales.
-- **jspdf + html2canvas**: Generación y descarga de comprobantes digitales en PDF.
-- **Local Storage**: Persistencia de datos en el navegador.
+- React + Vite
+- TypeScript
+- React Router DOM (navegación sin recargar la página)
+- lucide-react (íconos)
+- Local Storage (persistencia de datos)
 
-## 📂 Estructura del Proyecto
+## Estructura del proyecto
 
-```text
+```
 src/
-├── types/
-│   └── index.ts          # Interfaces y tipos compartidos (Usuario, Libro, Prestamo, etc.)
-├── utils/
-│   └── storage.ts        # Funciones seguras para leer y escribir en Local Storage
+├── types/index.ts          # Interfaces compartidas (Category, Book, etc.)
+├── utils/storage.ts        # Lectura y escritura segura en Local Storage
 ├── components/
-│   └── Layout.tsx        # Menú de navegación (Navbar) y contenedor principal
+│   ├── Layout.tsx          # Menú de navegación y contenedor principal
+│   └── FormFields.tsx      # Inputs, selects y textareas reutilizables
 ├── pages/
-│   ├── Home.tsx          # Página de inicio y presentación del sistema
-│   ├── Usuarios.tsx      # Módulo 2: Gestión de usuarios (CRUD + validaciones)
-│   ├── Inventario.tsx    # Módulo 1: Gestión de categorías y libros
-│   ├── Prestamos.tsx     # Módulo 3: Solicitud y préstamo de libros (control de stock)
-│   ├── Historial.tsx     # Módulo 5: Consulta de préstamos activos e historial
-│   └── Comprobante.tsx   # Módulo 4: Visualización y descarga de comprobante en PDF
-├── App.tsx               # Configuración de rutas de la aplicación
-└── main.tsx              # Punto de entrada de React
+│   ├── Home.tsx            # Inicio
+│   ├── Usuarios.tsx        # Módulo 2
+│   ├── Inventario.tsx      # Módulo 1
+│   ├── Prestamos.tsx       # Módulo 3
+│   ├── Historial.tsx       # Módulo 5
+│   └── Comprobante.tsx     # Módulo 4
+├── App.tsx                 # Rutas de la aplicación
+└── main.tsx                # Punto de entrada
+```
+
+## Integrantes y responsabilidades
+
+| Integrante                    | Módulo                                                   | Ruta                         |
+| ----------------------------- | -------------------------------------------------------- | ---------------------------- |
+| Yaranga                       | Estructura base, Inicio y Gestión de usuarios (Módulo 2) | `/`, `/usuarios`             |
+| Ingrid Ivette Andrade Egoavil | Gestión de categorías y libros (Módulo 1)                | `/inventario`                |
+| Piero Garcia                  | Solicitud y préstamo de libros (Módulo 3)                | `/prestamos`                 |
+| Mauricio Vega                 | Comprobante digital (Módulo 4) e Historial (Módulo 5)    | `/comprobante`, `/historial` |
+
+## Flujo de trabajo con Git
+
+Cada integrante trabajó en su propia rama y luego se integraron en `main` mediante Pull Requests.
+
+```bash
+git checkout -b nombre-rama      # crear rama propia
+git add .
+git commit -m "feat: descripción"
+git pull origin main             # traer cambios del equipo
+git push -u origin nombre-rama   # subir rama y abrir Pull Request
 ```
