@@ -1,74 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  BookOpen, 
-  UserCheck, 
-  CheckCircle, 
-  XCircle, 
+import { useState, useEffect } from "react";
+import {
+  Search,
+  BookOpen,
+  UserCheck,
+  CheckCircle,
+  XCircle,
   AlertCircle,
-  PlusCircle 
-} from 'lucide-react';
-
-interface Libro {
-  id: string;
-  titulo: string;
-  autor: string;
-  isbn: string;
-  categoria: string;
-  stock: number;
-}
-
-interface Usuario {
-  codigo: string;
-  nombres: string;
-  apellidos: string;
-  correo: string;
-  tipo: 'Estudiante' | 'Docente';
-}
-
-interface Prestamo {
-  id: string;
-  usuarioCodigo: string;
-  libroId: string;
-  libroTitulo: string;
-  fechaPrestamo: string;
-  fechaDevolucion: string;
-  estado: 'Activo' | 'Devuelto';
-}
+  PlusCircle,
+} from "lucide-react";
+import type { Libro, Usuario, Prestamo } from "../types";
+import { StorageKeys, getStorage, setStorage } from "../utils/storage";
 
 export default function Prestamos() {
   const [libros, setLibros] = useState<Libro[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
-  
-  const [busqueda, setBusqueda] = useState('');
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState('');
-  const [libroSeleccionado, setLibroSeleccionado] = useState<Libro | null>(null);
-  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
 
-  // Funciones de utilidad internas para interactuar con LocalStorage
-  const obtenerLibros = (): Libro[] => {
-    return JSON.parse(localStorage.getItem('libros') || '[]');
-  };
-
-  const modificarStock = (libroId: string, cantidad: number): boolean => {
-    const listaLibros: Libro[] = obtenerLibros();
-    const index = listaLibros.findIndex((l) => l.id === libroId);
-    
-    if (index === -1) return false;
-
-    const nuevoStock = listaLibros[index].stock + cantidad;
-    if (nuevoStock < 0) return false;
-
-    listaLibros[index].stock = nuevoStock;
-    localStorage.setItem('libros', JSON.stringify(listaLibros));
-    return true;
-  };
+  const [busqueda, setBusqueda] = useState("");
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
+  const [libroSeleccionado, setLibroSeleccionado] = useState<Libro | null>(
+    null,
+  );
+  const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
 
   const cargarDatos = () => {
-    const librosGuardados = obtenerLibros();
-    const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    const prestamosGuardados = JSON.parse(localStorage.getItem('prestamos') || '[]');
+    const librosGuardados = getStorage<Libro[]>(StorageKeys.LIBROS, []);
+    const usuariosGuardados = getStorage<Usuario[]>(StorageKeys.USUARIOS, []);
+    const prestamosGuardados = getStorage<Prestamo[]>(
+      StorageKeys.PRESTAMOS,
+      [],
+    );
 
     setLibros(librosGuardados);
     setUsuarios(usuariosGuardados);
@@ -79,133 +40,152 @@ export default function Prestamos() {
     cargarDatos();
   }, []);
 
-  // Filtrar libros por título o categoría
   const librosFiltrados = libros.filter(
     (libro) =>
       libro.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
-      libro.categoria.toLowerCase().includes(busqueda.toLowerCase())
+      libro.categoriaId.toLowerCase().includes(busqueda.toLowerCase()),
   );
 
   const handleSolicitarPrestamo = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!usuarioSeleccionado || !libroSeleccionado) {
-      setMensaje({ texto: 'Por favor, seleccione un usuario y un libro.', tipo: 'error' });
+      setMensaje({
+        texto: "Por favor, seleccione un usuario y un libro.",
+        tipo: "error",
+      });
       return;
     }
 
-    // Validación de stock
     if (libroSeleccionado.stock === 0) {
-      setMensaje({ texto: 'No se puede realizar el préstamo: El libro está agotado.', tipo: 'error' });
+      setMensaje({
+        texto: "No se puede realizar el préstamo: El libro está agotado.",
+        tipo: "error",
+      });
       return;
     }
 
-    // Restar 1 al stock (-1)
-    const stockActualizadoExitoso = modificarStock(libroSeleccionado.id, -1);
-    if (!stockActualizadoExitoso) {
-      setMensaje({ texto: 'Error al actualizar el stock del libro.', tipo: 'error' });
-      return;
-    }
+    // Restar 1 al stock
+    const librosActualizados = libros.map((libro) =>
+      libro.id === libroSeleccionado.id
+        ? { ...libro, stock: libro.stock - 1 }
+        : libro,
+    );
+    setLibros(librosActualizados);
+    setStorage(StorageKeys.LIBROS, librosActualizados);
 
     const hoy = new Date();
     const fechaDevolucion = new Date();
     fechaDevolucion.setDate(hoy.getDate() + 7);
 
-    const codigoUnicoPrestamo = 'PRES-' + Date.now().toString().slice(-6);
+    const codigoUnicoPrestamo = "PRES-" + Date.now().toString().slice(-6);
 
     const nuevoPrestamo: Prestamo = {
       id: codigoUnicoPrestamo,
       usuarioCodigo: usuarioSeleccionado,
       libroId: libroSeleccionado.id,
-      libroTitulo: libroSeleccionado.titulo,
-      fechaPrestamo: hoy.toISOString().split('T')[0],
-      fechaDevolucion: fechaDevolucion.toISOString().split('T')[0],
-      estado: 'Activo',
+      fechaPrestamo: hoy.toISOString().split("T")[0],
+      fechaLimite: fechaDevolucion.toISOString().split("T")[0],
+      estado: "Activo",
     };
 
     const prestamosActualizados = [...prestamos, nuevoPrestamo];
+    setPrestamos(prestamosActualizados);
+    setStorage(StorageKeys.PRESTAMOS, prestamosActualizados);
 
-    // Guardar los préstamos en el LocalStorage
-    localStorage.setItem('prestamos', JSON.stringify(prestamosActualizados));
-
-    // Refrescar los estados de la vista
     cargarDatos();
     setLibroSeleccionado(null);
-    setUsuarioSeleccionado('');
-    setMensaje({ 
-      texto: `¡Préstamo registrado exitosamente! Código único: ${codigoUnicoPrestamo}`, 
-      tipo: 'exito' 
+    setUsuarioSeleccionado("");
+    setMensaje({
+      texto: `¡Préstamo registrado exitosamente! Código: ${codigoUnicoPrestamo}`,
+      tipo: "exito",
     });
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {/* Encabezado */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+    <div className="max-w-7xl mx-auto p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
           <BookOpen className="w-8 h-8 text-blue-600" />
-          Módulo de Solicitud y Préstamos
+          Solicitud y Préstamos de Libros
         </h1>
-        <p className="text-gray-500 mt-1">
-          Busca libros, verifica su disponibilidad e ingresa las solicitudes de préstamo.
+        <p className="text-slate-600 mt-1">
+          Busca libros, verifica disponibilidad y registra préstamos
         </p>
       </div>
 
-      {/* Mensajes de Alerta */}
+      {/* Mensajes */}
       {mensaje.texto && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 font-medium ${
-          mensaje.tipo === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
-        }`}>
-          {mensaje.tipo === 'error' ? (
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+        <div
+          className={`p-4 rounded-lg mb-6 flex items-center gap-3 ${
+            mensaje.tipo === "error"
+              ? "bg-red-100 border border-red-400 text-red-700"
+              : "bg-emerald-100 border border-emerald-400 text-emerald-700"
+          }`}
+        >
+          {mensaje.tipo === "error" ? (
+            <AlertCircle className="w-5 h-5" />
           ) : (
-            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <CheckCircle className="w-5 h-5" />
           )}
-          <span>{mensaje.texto}</span>
+          {mensaje.texto}
         </div>
       )}
 
-      {/* Formulario para Registrar Préstamo */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      {/* Formulario de Préstamo */}
+      <div className="bg-white border-2 border-slate-200 rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-blue-600" />
           Registrar Nuevo Préstamo
         </h2>
-        <form onSubmit={handleSolicitarPrestamo} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <form
+          onSubmit={handleSolicitarPrestamo}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Seleccionar Usuario
             </label>
             <select
               value={usuarioSeleccionado}
               onChange={(e) => setUsuarioSeleccionado(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full border-2 border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"
               required
             >
               <option value="">-- Seleccione un usuario --</option>
               {usuarios.map((u) => (
-                <option key={u.codigo} value={u.codigo}>
-                  {u.nombres} {u.apellidos} ({u.codigo})
+                <option
+                  key={u.codigoUniversitario}
+                  value={u.codigoUniversitario}
+                >
+                  {u.nombres} {u.apellidos} ({u.codigoUniversitario})
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Libro Seleccionado
             </label>
             <input
               type="text"
               readOnly
-              value={libroSeleccionado ? `${libroSeleccionado.titulo} (Stock: ${libroSeleccionado.stock})` : 'Ningún libro seleccionado'}
-              className="w-full border border-gray-200 bg-gray-50 text-gray-600 rounded-lg p-2.5 text-sm font-medium"
+              value={
+                libroSeleccionado
+                  ? `${libroSeleccionado.titulo} (Stock: ${libroSeleccionado.stock})`
+                  : "Ningún libro seleccionado"
+              }
+              className="w-full border-2 border-slate-200 bg-slate-50 rounded-lg p-2.5 text-slate-600"
             />
           </div>
 
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-150 shadow-sm"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
             >
               <PlusCircle className="w-5 h-5" />
               Confirmar Préstamo
@@ -214,87 +194,104 @@ export default function Prestamos() {
         </form>
       </div>
 
-      {/* Búsqueda y Tabla de Libros */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h2 className="text-xl font-semibold text-gray-800">
+      {/* Catálogo de Libros */}
+      <div className="bg-white border-2 border-slate-200 rounded-xl p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <h2 className="text-xl font-bold text-slate-900">
             Catálogo y Disponibilidad
           </h2>
-          
           <div className="relative w-full md:w-80">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Buscar por título o categoría..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full pl-10 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Título</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Autor</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoría</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {librosFiltrados.map((libro) => (
-                <tr key={libro.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{libro.titulo}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{libro.autor}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium">
-                      {libro.categoria}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{libro.stock}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {libro.stock > 0 ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Disponible
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700 border border-red-200">
-                        <XCircle className="w-3.5 h-3.5" />
-                        Agotado
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setLibroSeleccionado(libro)}
-                      disabled={libro.stock === 0}
-                      className={`py-1.5 px-4 rounded-lg text-xs font-medium transition ${
-                        libro.stock > 0 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                      }`}
-                    >
-                      {libro.stock > 0 ? 'Seleccionar' : 'Agotado'}
-                    </button>
-                  </td>
+        {librosFiltrados.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">
+            <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" />
+            <p>No se encontraron libros disponibles</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-slate-200">
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Título
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Autor
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Categoría
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Stock
+                  </th>
+                  <th className="text-left p-3 text-sm font-semibold text-slate-700">
+                    Estado
+                  </th>
+                  <th className="text-center p-3 text-sm font-semibold text-slate-700">
+                    Acción
+                  </th>
                 </tr>
-              ))}
-              {librosFiltrados.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                    No se encontraron libros disponibles.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {librosFiltrados.map((libro) => (
+                  <tr
+                    key={libro.id}
+                    className="border-b border-slate-100 hover:bg-slate-50"
+                  >
+                    <td className="p-3 font-medium text-slate-900">
+                      {libro.titulo}
+                    </td>
+                    <td className="p-3 text-slate-600">{libro.autor}</td>
+                    <td className="p-3">
+                      <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-medium">
+                        {libro.categoriaId}
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono text-slate-900">
+                      {libro.stock}
+                    </td>
+                    <td className="p-3">
+                      {libro.stock > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold">
+                          <CheckCircle className="w-3 h-3" />
+                          Disponible
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
+                          <XCircle className="w-3 h-3" />
+                          Agotado
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => setLibroSeleccionado(libro)}
+                        disabled={libro.stock === 0}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          libro.stock > 0
+                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        }`}
+                      >
+                        {libro.stock > 0 ? "Seleccionar" : "Agotado"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
