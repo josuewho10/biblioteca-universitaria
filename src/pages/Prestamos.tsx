@@ -8,7 +8,6 @@ import {
   AlertCircle,
   PlusCircle 
 } from 'lucide-react';
-import { getLibros, actualizarStock } from '../utils/storage';
 
 interface Libro {
   id: string;
@@ -47,15 +46,37 @@ export default function Prestamos() {
   const [libroSeleccionado, setLibroSeleccionado] = useState<Libro | null>(null);
   const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
 
-  useEffect(() => {
-    // Cargar libros con la función del utilitario de Andrade
-    const librosGuardados = getLibros() as Libro[];
+  // Funciones de utilidad internas para interactuar con LocalStorage
+  const obtenerLibros = (): Libro[] => {
+    return JSON.parse(localStorage.getItem('libros') || '[]');
+  };
+
+  const modificarStock = (libroId: string, cantidad: number): boolean => {
+    const listaLibros: Libro[] = obtenerLibros();
+    const index = listaLibros.findIndex((l) => l.id === libroId);
+    
+    if (index === -1) return false;
+
+    const nuevoStock = listaLibros[index].stock + cantidad;
+    if (nuevoStock < 0) return false;
+
+    listaLibros[index].stock = nuevoStock;
+    localStorage.setItem('libros', JSON.stringify(listaLibros));
+    return true;
+  };
+
+  const cargarDatos = () => {
+    const librosGuardados = obtenerLibros();
     const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios') || '[]');
     const prestamosGuardados = JSON.parse(localStorage.getItem('prestamos') || '[]');
 
     setLibros(librosGuardados);
     setUsuarios(usuariosGuardados);
     setPrestamos(prestamosGuardados);
+  };
+
+  useEffect(() => {
+    cargarDatos();
   }, []);
 
   // Filtrar libros por título o categoría
@@ -78,8 +99,8 @@ export default function Prestamos() {
       return;
     }
 
-    // Restar 1 al stock mediante la utilidad de Andrade
-    const stockActualizadoExitoso = actualizarStock(libroSeleccionado.id, -1);
+    // Restar 1 al stock (-1)
+    const stockActualizadoExitoso = modificarStock(libroSeleccionado.id, -1);
     if (!stockActualizadoExitoso) {
       setMensaje({ texto: 'Error al actualizar el stock del libro.', tipo: 'error' });
       return;
@@ -103,12 +124,11 @@ export default function Prestamos() {
 
     const prestamosActualizados = [...prestamos, nuevoPrestamo];
 
-    // Actualizar LocalStorage
+    // Guardar los préstamos en el LocalStorage
     localStorage.setItem('prestamos', JSON.stringify(prestamosActualizados));
 
-    // Refrescar lista de libros desde el storage actualizado
-    setLibros(getLibros() as Libro[]);
-    setPrestamos(prestamosActualizados);
+    // Refrescar los estados de la vista
+    cargarDatos();
     setLibroSeleccionado(null);
     setUsuarioSeleccionado('');
     setMensaje({ 
@@ -130,7 +150,7 @@ export default function Prestamos() {
         </p>
       </div>
 
-      {/* Alertas */}
+      {/* Mensajes de Alerta */}
       {mensaje.texto && (
         <div className={`p-4 rounded-lg flex items-center gap-3 font-medium ${
           mensaje.tipo === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
@@ -144,7 +164,7 @@ export default function Prestamos() {
         </div>
       )}
 
-      {/* Formulario de Registrar Préstamo */}
+      {/* Formulario para Registrar Préstamo */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-blue-600" />
@@ -201,7 +221,6 @@ export default function Prestamos() {
             Catálogo y Disponibilidad
           </h2>
           
-          {/* Barra de Búsqueda */}
           <div className="relative w-full md:w-80">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -214,7 +233,6 @@ export default function Prestamos() {
           </div>
         </div>
 
-        {/* Tabla */}
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -270,7 +288,7 @@ export default function Prestamos() {
               {librosFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                    No se encontraron libros coincidentes.
+                    No se encontraron libros disponibles.
                   </td>
                 </tr>
               )}
