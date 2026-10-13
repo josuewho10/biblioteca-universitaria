@@ -1,0 +1,101 @@
+/* Estilos del módulo Inventario. Todas las clases empiezan con "inv-"
+   para no chocar con los estilos de los demás módulos. */
+
+.inv {
+  --inv-primario: #1f3a5f;
+  --inv-primario-hover: #142a47;
+  --inv-suave: #e8eef6;
+  --inv-linea: #d9dee5;
+  --inv-texto: #1d2733;
+  --inv-gris: #5b6675;
+  --inv-ok: #2e7d4f;
+  --inv-peligro: #b3261e;
+  color: var(--inv-texto);
+  font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.inv *, .inv *::before, .inv *::after { box-sizing: border-box; }
+
+.inv h1 { font-size: 1.7rem; color: var(--inv-primario); margin: 0; }
+.inv h2 { font-size: 1.15rem; color: var(--inv-primario); margin: 0 0 1rem; }
+.inv-sub { color: var(--inv-gris); margin: 0.2rem 0 0; }
+
+.inv-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.25rem; }
+.inv-resumen { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.inv-resumen span { background: var(--inv-suave); color: var(--inv-primario); padding: 0.35rem 0.8rem; border-radius: 999px; font-size: 0.9rem; }
+
+/* Pestañas */
+.inv-pestanas { display: flex; gap: 0.25rem; border-bottom: 2px solid var(--inv-linea); margin-bottom: 1.25rem; }
+.inv-pestanas button {
+  background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px;
+  padding: 0.6rem 1.2rem; font: inherit; font-weight: 600; color: var(--inv-gris); cursor: pointer;
+}
+.inv-pestanas button.activa { color: var(--inv-primario); border-bottom-color: var(--inv-primario); }
+
+/* Formulario a la izquierda, tabla a la derecha */
+.inv-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; align-items: start; }
+
+.inv-form { background: #fff; border: 1px solid var(--inv-linea); border-radius: 10px; padding: 1.25rem; position: sticky; top: 1rem; }
+
+.inv-campo { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.9rem; }
+.inv-campo label { font-weight: 600; font-size: 0.9rem; }
+.inv-campo input, .inv-campo select, .inv-campo textarea, .inv-buscador {
+  font: inherit; padding: 0.55rem 0.7rem; border: 1px solid var(--inv-linea); border-radius: 8px; background: #fff; width: 100%;
+}
+.inv-campo [aria-invalid="true"] { border-color: var(--inv-peligro); background: #fdf5f4; }
+.inv-error { color: var(--inv-peligro); font-size: 0.82rem; }
+
+.inv-acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+.inv-btn {
+  font: inherit; font-weight: 600; padding: 0.6rem 1.2rem; border: none; border-radius: 8px;
+  background: var(--inv-primario); color: #fff; cursor: pointer;
+}
+.inv-btn:hover { background: var(--inv-primario-hover); }
+.inv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.inv-btn-sec { background: var(--inv-suave); color: var(--inv-primario); }
+.inv-btn-sec:hover { background: #d4e0ee; }
+.inv-btn-link { font: inherit; background: none; border: none; padding: 0.2rem; color: var(--inv-primario); text-decoration: underline; cursor: pointer; }
+.inv-peligro { color: var(--inv-peligro); }
+
+.inv button:focus-visible, .inv input:focus-visible, .inv select:focus-visible, .inv textarea:focus-visible {
+  outline: 3px solid #f0b429; outline-offset: 2px;
+}
+
+.inv-aviso { padding: 0.7rem 1rem; border-radius: 8px; margin: 0 0 1rem; font-size: 0.92rem; }
+.inv-aviso-ok { background: #e6f4ec; color: var(--inv-ok); }
+.inv-aviso-error { background: #fbeceb; color: var(--inv-peligro); }
+
+/* Tabla */
+.inv-tabla-contenedor { min-width: 0; }
+.inv-buscador { margin-bottom: 0.75rem; }
+.inv-tabla { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--inv-linea); border-radius: 10px; overflow: hidden; }
+.inv-tabla th, .inv-tabla td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--inv-linea); font-size: 0.92rem; vertical-align: middle; }
+.inv-tabla th { background: var(--inv-primario); color: #fff; font-weight: 600; }
+.inv-tabla tbody tr:hover { background: #f7f9fc; }
+.inv-fila-editando { background: #fff8e1 !important; }
+
+.inv-stock { display: inline-block; min-width: 2rem; text-align: center; padding: 0.1rem 0.5rem; border-radius: 999px; background: #e6f4ec; color: var(--inv-ok); font-weight: 700; }
+.inv-stock-cero { background: #fbeceb; color: var(--inv-peligro); }
+
+.inv-vacio { color: var(--inv-gris); font-style: italic; padding: 1.5rem; text-align: center; background: #fff; border: 1px dashed var(--inv-linea); border-radius: 10px; }
+
+/* Tablet: formulario arriba, tabla abajo */
+@media (max-width: 900px) {
+  .inv-layout { grid-template-columns: 1fr; }
+  .inv-form { position: static; }
+}
+
+/* Móvil: cada fila de la tabla se vuelve una tarjeta */
+@media (max-width: 640px) {
+  .inv-tabla, .inv-tabla tbody, .inv-tabla tr, .inv-tabla td { display: block; width: 100%; }
+  .inv-tabla { border: none; background: none; }
+  .inv-tabla thead { display: none; }
+  .inv-tabla tr { background: #fff; border: 1px solid var(--inv-linea); border-radius: 10px; margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; }
+  .inv-tabla td { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #eef1f5; padding: 0.45rem 0; text-align: right; }
+  .inv-tabla td:last-child { border-bottom: none; }
+  .inv-tabla td::before { content: attr(data-label); font-weight: 600; color: var(--inv-gris); text-align: left; }
+}
